@@ -6,20 +6,26 @@ set -e
 
 beforeFile="$(realpath "$1")"
 afterFile="$(realpath "$2")"
-attribution="$3"
-if test -z "$beforeFile" || test -z "$afterFile" || test -z "$attribution"; then
-  echo "Usage: <before.docx> <after.docx> <attribution>"
+comparisonFileArg="$3"
+authorName="$4"
+if test -z "$beforeFile" || test -z "$afterFile" || test -z "$comparisonFileArg"; then
+  echo "Usage: <before.docx> <after.docx> <output.docx> [author name]"
   exit 1
 fi
 
-comparisonFile="$PWD/comparison.docx"
+comparisonFileDirectory=$(realpath "$(dirname "$comparisonFileArg")")
+comparisonFile="$comparisonFileDirectory/$(basename "$comparisonFileArg")"
 
 osascript <<SCRIPT
 on run
   tell application "Microsoft Word"
     open (POSIX file "$beforeFile")
     set beforeDocument to active document
-    compare beforeDocument path (POSIX file "$afterFile") author name "$attribution"
+    if "$authorName" = "" then
+      compare beforeDocument path (POSIX file "$afterFile")
+    else
+      compare beforeDocument path (POSIX file "$afterFile") author name "$authorName"
+    end if
     set comparisonDocument to active document
     save as comparisonDocument file name (POSIX file "$comparisonFile") file format format document
     close comparisonDocument saving no
